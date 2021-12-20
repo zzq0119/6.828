@@ -112,6 +112,9 @@ exec(char *path, char **argv)
   oldpagetable = p->pagetable;
   p->pagetable = pagetable;
   p->sz = sz;
+  proc_kpt_copy(p->k_pagetable, 0, oldsz, 0); // release old kernel pagetable
+  if (proc_kpt_copy(p->k_pagetable, p->pagetable, 0, p->sz) != p->sz)
+    goto bad;
   p->trapframe->epc = elf.entry;  // initial program counter = main
   p->trapframe->sp = sp; // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);

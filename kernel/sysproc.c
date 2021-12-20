@@ -43,12 +43,19 @@ sys_sbrk(void)
 {
   int addr;
   int n;
+  struct proc* p;
 
+  p = myproc();
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->sz;
-  if(growproc(n) < 0)
+  addr = p->sz;
+  if(addr + n >= PLIC || growproc(n) < 0)
     return -1;
+  if (proc_kpt_copy(p->k_pagetable, p->pagetable, addr, p->sz) != p->sz)
+  {
+    growproc(-n); //恢复初始状态
+    return -1;
+  }
   return addr;
 }
 

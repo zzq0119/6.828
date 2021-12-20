@@ -120,7 +120,7 @@ proc_free_k_pagetable(struct proc *p){
   uvmunmap(pagetable, KERNBASE, ((uint64)etext-KERNBASE) / PGSIZE, 0);
   uvmunmap(pagetable, (uint64)etext, (PHYSTOP-(uint64)etext) / PGSIZE, 0);
   uvmunmap(pagetable, p->kstack, 1, 1);
-  uvmfree(pagetable, 0);
+  ukvmfree(pagetable, p->sz);
 }
 // Look in the process table for an UNUSED proc.
 // If found, initialize state required to run in the kernel,
@@ -268,7 +268,7 @@ userinit(void)
   // and data into it.
   uvminit(p->pagetable, initcode, sizeof(initcode));
   p->sz = PGSIZE;
-
+  proc_kpt_copy(p->k_pagetable, p->pagetable, 0, p->sz);
   // prepare for the very first "return" from kernel to user.
   p->trapframe->epc = 0;      // user program counter
   p->trapframe->sp = PGSIZE;  // user stack pointer
@@ -322,6 +322,11 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+  if(proc_kpt_copy(np->k_pagetable, np->pagetable, 0, np->sz) != np->sz){
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
 
   np->parent = p;
 

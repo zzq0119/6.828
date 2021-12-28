@@ -553,6 +553,18 @@ forkret(void)
   usertrapret();
 }
 
+void 
+backtrace(){
+  uint64 fp;
+
+  fp = r_fp();
+  while(PGROUNDUP(fp) - PGROUNDDOWN(fp) == PGSIZE){
+    fp = fp - 8;
+    printf("%p\n", *(uint64*)fp);
+    fp = *(uint64*)(fp - 8);
+  }
+}
+
 // Atomically release lock and sleep on chan.
 // Reacquires lock when awakened.
 void

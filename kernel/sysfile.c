@@ -105,6 +105,29 @@ sys_close(void)
 }
 
 uint64
+sys_alarm(void)
+{
+  int interval;
+  uint64 handler;
+
+  if(argint(0, &interval) < 0)
+    return -1;
+  if(argaddr(1, &handler) < 0)
+    return -1;
+  myproc()->interval = interval;
+  myproc()->handler = (void*)handler;
+  return 0;
+}
+
+uint64
+sys_return(void)
+{
+  memmove(myproc()->trapframe, myproc()->buffer, sizeof(struct trapframe));
+  myproc()->on = 0;
+  return 0;
+}
+
+uint64
 sys_fstat(void)
 {
   struct file *f;

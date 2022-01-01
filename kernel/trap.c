@@ -65,6 +65,24 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if(r_scause() == 15 || r_scause() == 13){
+    uint64 va = r_stval();
+    if(PGROUNDUP(p->trapframe->sp) - 1 < va && va < p->sz){
+      va = PGROUNDDOWN(va);
+      char* mem = kalloc();
+      if(mem == 0){
+        p->killed = 1;
+      }else{
+        memset(mem, 0, PGSIZE);
+        if(mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
+          kfree(mem);
+          p->killed = 1;
+        }
+      }
+    } else {
+      printf("Segment fault.\n");
+      p->killed = 1;
+    }
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {

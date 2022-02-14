@@ -50,7 +50,8 @@ usertrap(void)
   // save user program counter.
   p->trapframe->epc = r_sepc();
   
-  if(r_scause() == 8){
+  uint64 cause = r_scause();
+  if(cause == 8){
     // system call
 
     if(p->killed)
@@ -65,6 +66,13 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if(cause == 15 || cause == 13){
+    // allocate memory for cow pages.
+    uint64 va = r_stval();
+    if(va >= p->sz || is_cow_page(p->pagetable, va) == 0 ||
+       alloc_cow_page(p->pagetable, PGROUNDDOWN(va)) == 0){
+      p->killed = 1;
+    }
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {

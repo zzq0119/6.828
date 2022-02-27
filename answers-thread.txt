@@ -1,0 +1,2 @@
+Q: Why are there missing keys with 2 threads, but not with 1 thread?
+A: If two thread put insert on the same entry, set e->next concurrently, then one key would be missing.
